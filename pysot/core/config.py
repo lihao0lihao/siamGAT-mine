@@ -164,7 +164,7 @@ __C.DATASET.DET.FRAME_RANGE = 1
 __C.DATASET.DET.NUM_USE = 50000
 
 __C.DATASET.GOT = CN()
-__C.DATASET.GOT.ROOT = '/home/lxz/lihao/SiamGAT-main/training_dataset/got10k/crop511'
+__C.DATASET.GOT.ROOT = '/media/ln06/diskB1/2022/lihao/siamGAT-main/training_dataset/got10k/crop511'
 __C.DATASET.GOT.ANNO = 'training_dataset/got10k/train.json'
 __C.DATASET.GOT.FRAME_RANGE = 50
 __C.DATASET.GOT.NUM_USE = 200000

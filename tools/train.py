@@ -13,8 +13,11 @@ import math
 import json
 import random
 import numpy as np
-
+import sys
 import torch
+sys.path.append('../')
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
@@ -288,8 +291,9 @@ def main():
     # load pretrained backbone weights
     if cfg.BACKBONE.PRETRAINED:
         cur_path = os.path.dirname(os.path.realpath(__file__))
+        print(cur_path)
         #backbone_path = os.path.join(cur_path, '../', cfg.BACKBONE.PRETRAINED)
-        backbone_path = '/home/lxz/lihao/SiamGAT-main/tools/pretrained_models/inception_v3.pth'
+        backbone_path = os.path.join(cur_path,'pretrained_models','inception_v3.pth')
         load_pretrain(model.backbone, backbone_path)
 
     # create tensorboard writer
