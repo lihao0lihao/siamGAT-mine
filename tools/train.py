@@ -18,6 +18,7 @@ import torch
 sys.path.append('../')
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from tensorboardX import SummaryWriter
