@@ -231,6 +231,20 @@ class SiamGATTracker(SiameseTracker):
         width=new_width
         height=new_height
 
+        if cls_score>0.95:
+            # get crop
+            bbox = [cx - width / 2,
+                cy - height / 2,
+                width,
+                height]
+            z_crop = self.get_subwindow(img, self.center_pos,
+                                        cfg.TRACK.EXEMPLAR_SIZE,
+                                        s_z, self.channel_average)
+            scale = cfg.TRACK.EXEMPLAR_SIZE / s_z
+            c = (cfg.TRACK.EXEMPLAR_SIZE - 1) / 2
+            roi = torch.tensor([[c - bbox[2] * scale / 2, c - bbox[3] * scale / 2,
+                                c + bbox[2] * scale / 2, c + bbox[3] * scale / 2]])
+            self.model.new_template(z_crop, roi)
     #
     #
     #

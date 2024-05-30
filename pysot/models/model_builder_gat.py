@@ -111,6 +111,11 @@ class ModelBuilder(nn.Module):
 
         # build response map
         self.attention = Graph_Attention_Union(256, 256)
+        self.attention_1 = Graph_Attention_Union(32, 32)
+        self.attention_2 = Graph_Attention_Union(768,768)
+        self.zf_new = None
+        self.zf_0_new = None
+        self.zf_1_new = None
 
         # build loss
         self.loss_evaluator = make_siamcar_loss_evaluator(cfg)
@@ -120,14 +125,25 @@ class ModelBuilder(nn.Module):
         self.selfAttn=Attention(794)
         self.l1=nn.Linear(794,625)
     def template(self, z, roi):
-        zf ,_= self.backbone(z, roi)
+        zf ,output= self.backbone(z, roi)
+        a=output[0]
+        d=output[3]
         self.zf = zf
+        self.zf_0 = a
+        self.zf_1 = d
     def get_template_feature(self,z,roi):
         zf,_ = self.backbone(z, roi)
         return zf
     def update_add_zf(self,zf_new):
         lamda=0.9
         self.zf=lamda*self.zf+(1-lamda)*zf_new
+    def new_template(self,z,roi):
+        zf ,output= self.backbone(z, roi)
+        a=output[0]
+        d=output[3]
+        self.zf_new = zf
+        self.zf_0_new = a
+        self.zf_1_new = d
     def multi_scale(self,output):
         # p0=nn.AdaptiveAvgPool2d(25)
         # c0=nn.Conv2d(in_channels=output[0].shape[1],out_channels=256,kernel_size=1,stride=1,padding=0)
@@ -155,16 +171,24 @@ class ModelBuilder(nn.Module):
         return x
     def track(self, x):
         xf,output= self.backbone(x)
-        
-        #print("this,,,,,",xf.shape)this,,,,, torch.Size([1, 256, 25, 25])
-        x=self.multi_scale(output)
-        xf=xf*0.9+x*0.1
-        
+        a=output[0]
+        d=output[3]
+     
         features = self.attention(self.zf, xf)
-        attn=self.getAttn(xf,self.zf)
-        attn=attn.cuda()
-        features=features+0.1*attn
-        #print('zf shape is ',self.zf.shape,'xf.shape is ',xf.shape,'feature shape ',features.shape)
+        features_1=self.attention_1(self.zf_0,a)
+        features_2=self.attention_2(self.zf_1,d)
+        if self.zf_new is not None:
+            features_new = self.attention(self.zf_new, xf)
+            features_1_new=self.attention_1(self.zf_0_new,a)
+            features_2_new=self.attention_2(self.zf_1_new,d)
+            features=self.fusion(feature=features,feature_1=features_1_new,feature_2=features_2_new)+0.01*features_new
+            self.zf_new=None
+            self.zf_0_new=None
+            self.zf_1_new=None
+        #print('shape',features.shape,features_1.shape,features_2.shape)
+        #shape torch.Size([1, 32, 143, 143]) torch.Size([1, 768, 33, 33])
+        #shape torch.Size([1, 256, 25, 25]) torch.Size([1, 32, 143, 143]) torch.Size([1, 768, 33, 33])
+        features=self.fusion(feature=features,feature_1=features_1,feature_2=features_2)
         cls, loc, cen = self.car_head(features)
         return {
                 'cls': cls,
@@ -179,6 +203,22 @@ class ModelBuilder(nn.Module):
         cls = F.log_softmax(cls, dim=4)
         return cls
     
+    def fusion(self,feature,feature_1,feature_2):
+        feature_1=feature_1.cuda()
+        feature_2=feature_2.cuda()
+        C,H,W=feature.shape[1],feature.shape[2],feature.shape[3]
+        pool=nn.AdaptiveAvgPool2d((H,W))
+        feature_1=pool(feature_1)
+        feature_2=pool(feature_2)
+        self.conv1=nn.Conv2d(in_channels=feature_1.shape[1],out_channels=C,kernel_size=1,stride=1,padding=0)
+        self.conv2=nn.Conv2d(in_channels=feature_2.shape[1],out_channels=C,kernel_size=1,stride=1,padding=0)
+        self.conv1=self.conv1.cuda()
+        self.conv2=self.conv2.cuda()
+        feature_1=self.conv1(feature_1)
+        feature_2=self.conv2(feature_2)
+        feature=0.9*feature+0.1*feature_1+0.1*feature_2
+        return feature
+
     def getAttn(self,xf_features,zf_features):
         B,C,A,B=xf_features.shape
         xf_features=xf_features.view(xf_features.shape[0],xf_features.shape[1],xf_features.shape[2]*xf_features.shape[2])
@@ -206,13 +246,19 @@ class ModelBuilder(nn.Module):
         neg = data['neg'].cuda()
 
         # get feature
-        zf  ,  _= self.backbone(template, target_box)
-        xf , _  = self.backbone(search)
-
+        zf  , output_zf= self.backbone(template, target_box)
+        zf_0=output_zf[0]
+        zf_1=output_zf[3]
+       
+        xf , output  = self.backbone(search)
+        a=output[0]
+        d=output[3]
+     
         features = self.attention(zf, xf)
-        attn=self.getAttn(xf,zf)
-        attn=attn.cuda()
-        features=features+0.1*attn
+        features_1=self.attention_1(zf_0,a)
+        features_2=self.attention_2(zf_1,d)
+        features=self.fusion(feature=features,feature_1=features_1,feature_2=features_2)
+        
         #print('zf shape is ',zf.shape,'xf.shape is ',xf.shape,'feature shape ',features.shape)
         #zf shape is  torch.Size([32, 256, 13, 13]) xf.shape is  torch.Size([32, 256, 25, 25]) 
         #feature shape  torch.Size([32, 256, 25, 25])

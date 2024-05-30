@@ -207,3 +207,5 @@ If you use SiamGAT in your work please cite our papers:
 
 >测试命令：
 python testTracker.py --config ../experiments/siamgat_googlenet_got10k/config.yaml --dataset GOT-10k --snapshot snapshot/got10k_model.pth
+>训练命令：
+python train.py --cfg ../experiments/siamgat_googlenet_got10k/config.yaml

@@ -90,7 +90,7 @@ class Inception3(nn.Module):
         dim_change=x.shape[-1]
         pool=nn.AdaptiveAvgPool2d(dim_change)
         #conv1=nn.Conv2d(in_channels=32,out_channels=768,kernel_size=1,stride=1,padding=0,bias=False)
-        # print("a,b,c",a.shape,b.shape,c.shape)
+        # print("a,b,c,d,e,f",a.shape,b.shape,c.shape,d.shape,e.shape,f.shape)
         # a,b,c torch.Size([1, 32, 63, 63]) torch.Size([1, 80, 30, 30]) torch.Size([1, 288, 28, 28])
         # a=pool(a)
         output=[]
@@ -105,9 +105,15 @@ class Inception3(nn.Module):
         output.append(d)
         output.append(e)
         output.append(f)
-        ###myself_end
-        # print("xxxxshape is",x.shape)
-        # xxxxshape is torch.Size([1, 768, 33, 33]
+        ###fearture shape记录（train and test）
+        # a,b,c,d,e,f torch.Size([16, 32, 143, 143]) torch.Size([16, 80, 70, 70])
+        # torch.Size([16, 288, 68, 68]) torch.Size([16, 768, 33, 33])
+        # torch.Size([16, 768, 33, 33]) torch.Size([16, 768, 33, 33])
+        # x(end_output) shape is torch.Size([16, 256, 25, 25])
+        # a,b,c,d,e,f torch.Size([1, 32, 143, 143]) torch.Size([1, 80, 70, 70])
+        # torch.Size([1, 288, 68, 68]) torch.Size([1, 768, 33, 33])
+        # torch.Size([1, 768, 33, 33]) torch.Size([1, 768, 33, 33])
+        # x(end_output) shape is torch.Size([1, 256, 25, 25])
         if len(bbox):
             assert bbox.shape[-1] == 4 and bbox.shape[0] == x.shape[0]
             stride = cfg.BACKBONE.STRIDE
@@ -124,6 +130,7 @@ class Inception3(nn.Module):
             crop_pad = cfg.BACKBONE.CROP_PAD
             x = x[:, :, crop_pad:-crop_pad, crop_pad:-crop_pad]
         x = self.channel_reduce(x)
+        #print("x(end_output) shape is",x.shape)
         return x,output
 
 
