@@ -23,4 +23,7 @@
 /training_dataset/got10k/crop511/*
 /training_dataset/got10k/123/*
 /training_dataset/got10k/data/*
+/training_dataset/otb/crop511/*
+/training_dataset/got10k/123/*
+/training_dataset/otb/data/*
 *.json
