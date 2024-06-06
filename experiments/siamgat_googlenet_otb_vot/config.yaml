@@ -50,6 +50,7 @@ TRAIN:
 DATASET:
     NAMES:
     - 'OTB'
+    - 'VOT2018LT'
 
     VIDEOS_PER_EPOCH: 100000
 

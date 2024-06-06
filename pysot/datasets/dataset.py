@@ -106,6 +106,8 @@ class SubDataset(object):
         frame = "{:06d}".format(frame)
         image_path = os.path.join(self.root, video,
                                   self.path_format.format(frame, track, 'x'))
+        # print(image_path)
+        # print(video,track,frame)
         image_anno = self.labels[video][track][frame]
         return image_path, image_anno
 

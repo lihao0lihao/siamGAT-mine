@@ -175,6 +175,12 @@ __C.DATASET.OTB.ANNO = 'training_dataset/otb/train.json'
 __C.DATASET.OTB.FRAME_RANGE = 50
 __C.DATASET.OTB.NUM_USE = 200000
 
+__C.DATASET.VOT2018LT = CN()
+__C.DATASET.VOT2018LT.ROOT = '/media/ln06/diskB1/2022/lihao/siamGAT-main/training_dataset/vot2018-lt//crop511'
+__C.DATASET.VOT2018LT.ANNO = 'training_dataset/vot2018-lt/train.json'
+__C.DATASET.VOT2018LT.FRAME_RANGE = 50
+__C.DATASET.VOT2018LT.NUM_USE = 200000
+
 __C.DATASET.LaSOT = CN()
 __C.DATASET.LaSOT.ROOT = '/PATH/TO/LaSOT'
 __C.DATASET.LaSOT.ANNO = 'training_dataset/lasot/train.json'

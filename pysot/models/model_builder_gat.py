@@ -216,7 +216,10 @@ class ModelBuilder(nn.Module):
         self.conv2=self.conv2.cuda()
         feature_1=self.conv1(feature_1)
         feature_2=self.conv2(feature_2)
-        feature=0.9*feature+0.1*feature_1+0.1*feature_2
+        pool_1=nn.AdaptiveAvgPool2d(1)
+        w_1=pool_1(feature_1)
+        w_2=pool_1(feature_2)
+        feature=0.9*feature+w_1*feature_1+w_2*feature_2
         return feature
 
     def getAttn(self,xf_features,zf_features):

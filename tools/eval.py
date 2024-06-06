@@ -5,12 +5,19 @@ from __future__ import unicode_literals
 
 import os
 import argparse
-
+import sys
 from glob import glob
 from tqdm import tqdm
 from multiprocessing import Pool
+
+sys.path.append('../')
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(base_dir)
+
 from toolkit.datasets import OTBDataset, UAVDataset, LaSOTDataset
 from toolkit.evaluation.ope_benchmark import OPEBenchmark
+
+
 
 parser = argparse.ArgumentParser(description='tracking evaluation')
 
@@ -39,9 +46,10 @@ def main():
     args.num = min(args.num, len(trackers))
 
     root = os.path.realpath(os.path.join(os.path.dirname(__file__),
-                            '../testing_dataset'))
+                            'test_dataset'))
 
     if 'OTB' in args.dataset:
+        root=os.path.join(root,args.dataset)
         dataset = OTBDataset(args.dataset, root)
         dataset.set_tracker(tracker_dir, trackers)
         benchmark = OPEBenchmark(dataset)
