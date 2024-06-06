@@ -48,3 +48,111 @@ def success_error(gt_center, result_center, thresholds, n_frame):
     return success
 
 
+
+###pysot-toolkit-statistics
+#
+#
+#
+def calculate_failures(trajectory):
+    """ Calculate number of failures
+    Args:
+        trajectory: list of bbox
+    Returns:
+        num_failures: number of failures
+        failures: failures point in trajectory, start with 0
+    """
+    failures = [i for i, x in zip(range(len(trajectory)), trajectory)
+            if len(x) == 1 and x[0] == 2]
+    num_failures = len(failures)
+    return num_failures, failures
+
+def calculate_accuracy(pred_trajectory, gt_trajectory,
+        burnin=0, ignore_unknown=True, bound=None):
+    """Caculate accuracy socre as average overlap over the entire sequence
+    Args:
+        trajectory: list of bbox
+        gt_trajectory: list of bbox
+        burnin: number of frames that have to be ignored after the failure
+        ignore_unknown: ignore frames where the overlap is unknown
+        bound: bounding region
+    Return:
+        acc: average overlap
+        overlaps: per frame overlaps
+    """
+    pred_trajectory_ = pred_trajectory
+    if not ignore_unknown:
+        unkown = [len(x)==1 and x[0] == 0 for x in pred_trajectory]
+    
+    if burnin > 0:
+        pred_trajectory_ = pred_trajectory[:]
+        mask = [len(x)==1 and x[0] == 1 for x in pred_trajectory]
+        for i in range(len(mask)):
+            if mask[i]:
+                for j in range(burnin):
+                    if i + j < len(mask):
+                        pred_trajectory_[i+j] = [0]
+    min_len = min(len(pred_trajectory_), len(gt_trajectory))
+    overlaps = region.vot_overlap_traj(pred_trajectory_[:min_len],
+            gt_trajectory[:min_len], bound)
+
+    if not ignore_unknown:
+        overlaps = [x if u else 0 for u in unkown]
+
+    acc = 0
+    if len(overlaps) > 0:
+        acc = np.nanmean(overlaps)
+    return acc, overlaps
+
+
+
+def determine_thresholds(scores, resolution=100):
+    """
+    Args:
+        scores: 1d array of score
+    """
+    scores = np.sort(scores[np.logical_not(np.isnan(scores))])
+    delta = np.floor(len(scores) / (resolution - 2))
+    idxs = np.floor(np.linspace(delta-1, len(scores)-delta, resolution-2)+0.5).astype(np.int32)
+    thresholds = np.zeros((resolution))
+    thresholds[0] = - np.inf
+    thresholds[-1] = np.inf
+    thresholds[1:-1] = scores[idxs]
+    return thresholds
+
+
+def calculate_f1(overlaps, score, bound, thresholds, N):
+    overlaps = np.array(overlaps)
+    overlaps[np.isnan(overlaps)] = 0
+    score = np.array(score)
+    score[np.isnan(score)] = 0
+    precision = np.zeros(len(thresholds))
+    recall = np.zeros(len(thresholds))
+    for i, th in enumerate(thresholds):
+        if th == - np.inf:
+            idx = score > 0
+        else:
+            idx = score >= th
+        if np.sum(idx) == 0:
+            precision[i] = 1
+            recall[i] = 0
+        else:
+            precision[i] = np.mean(overlaps[idx])
+            recall[i] = np.sum(overlaps[idx]) / N
+    f1 = 2 * precision * recall / (precision + recall)
+    return f1, precision, recall
+
+
+def calculate_expected_overlap(fragments, fweights):
+    max_len = fragments.shape[1]
+    expected_overlaps = np.zeros((max_len), np.float32)
+    expected_overlaps[0] = 1
+
+    # TODO Speed Up 
+    for i in range(1, max_len):
+        mask = np.logical_not(np.isnan(fragments[:, i]))
+        if np.any(mask):
+            fragment = fragments[mask, 1:i+1]
+            seq_mean = np.sum(fragment, 1) / fragment.shape[1]
+            expected_overlaps[i] = np.sum(seq_mean *
+                fweights[mask]) / np.sum(fweights[mask])
+    return expected_overlaps

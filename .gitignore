@@ -29,3 +29,4 @@
 /training_dataset/vot2018-lt/crop511/*
 /training_dataset/vot2018-lt/data/*
 *.json
+*.pyc

@@ -14,9 +14,10 @@ sys.path.append('../')
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(base_dir)
 
-from toolkit.datasets import OTBDataset, UAVDataset, LaSOTDataset
+from toolkit.datasets import OTBDataset, UAVDataset, LaSOTDataset,VOTLTDataset
 from toolkit.evaluation.ope_benchmark import OPEBenchmark
-
+# from toolkit.evaluation.f1_benchmark import F1Benchmark
+# from toolkit.evaluation.eao_benchmark import EAOBenchmark
 
 
 parser = argparse.ArgumentParser(description='tracking evaluation')
@@ -102,6 +103,40 @@ def main():
                 precision_ret.update(ret)
         benchmark.show_result(success_ret, precision_ret,
                 show_video_level=args.show_video_level)
+    # elif 'VOT2018' == args.dataset or 'VOT2016' == args.dataset:
+        # dataset = VOTDataset(args.dataset, root)
+        # dataset.set_tracker(tracker_dir, trackers)
+        # ar_benchmark = AccuracyRobustnessBenchmark(dataset)
+        # ar_result = {}
+        # with Pool(processes=args.num) as pool:
+        #     for ret in tqdm(pool.imap_unordered(ar_benchmark.eval,
+        #         trackers), desc='eval ar', total=len(trackers), ncols=100):
+        #         ar_result.update(ret)
+        # # benchmark.show_result(ar_result)
+
+        # benchmark = EAOBenchmark(dataset)
+        # eao_result = {}
+        # with Pool(processes=args.num) as pool:
+        #     for ret in tqdm(pool.imap_unordered(benchmark.eval,
+        #         trackers), desc='eval eao', total=len(trackers), ncols=100):
+        #         eao_result.update(ret)
+        # # benchmark.show_result(eao_result)
+        # ar_benchmark.show_result(ar_result, eao_result,
+        #         show_video_level=args.show_video_level)
+    elif 'VOT2018-LT' == args.dataset:
+        root=os.path.join(root,args.dataset)
+        dataset = VOTLTDataset(args.dataset, root)
+        dataset.set_tracker(tracker_dir, trackers)
+        benchmark = F1Benchmark(dataset)
+        f1_result = {}
+        with Pool(processes=args.num) as pool:
+            for ret in tqdm(pool.imap_unordered(benchmark.eval,
+                trackers), desc='eval f1', total=len(trackers), ncols=100):
+                f1_result.update(ret)
+        benchmark.show_result(f1_result,
+                show_video_level=args.show_video_level)
+        # if args.vis:
+        #     draw_f1(f1_result)
 
 
 if __name__ == '__main__':

@@ -53,6 +53,8 @@ def main():
     # set hyper parameters
     if args.dataset=='GOT-10k':
         params = getattr(cfg.HP_SEARCH, 'GOT_10k')
+    elif args.dataset=='VOT2018-LT':
+        params = getattr(cfg.HP_SEARCH, 'VOT2018_LT')
     else:
         params = getattr(cfg.HP_SEARCH, args.dataset)
     cfg.TRACK.LR = params[0]
@@ -105,6 +107,8 @@ def main():
             if args.vis and idx > 0:
                 if not any(map(math.isnan,gt_bbox)):
                     gt_bbox = list(map(int, gt_bbox))
+                    if gt_bbox == [0]:
+                        gt_bbox=[0,0,0,0]
                     pred_bbox = list(map(int, pred_bbox))
                     cv2.rectangle(img, (gt_bbox[0], gt_bbox[1]),
                                   (gt_bbox[0]+gt_bbox[2], gt_bbox[1]+gt_bbox[3]), (0, 255, 0), 3)
