@@ -85,7 +85,7 @@ def main():
         toc = 0
         pred_bboxes = []
         track_times = []
-
+        cls_scores = []
         for idx, (img, gt_bbox) in enumerate(video):
             tic = cv2.getTickCount()
 
@@ -100,6 +100,7 @@ def main():
                 cls_score=outputs['cls_score']
                 pred_bbox = outputs['bbox']
                 pred_bboxes.append(pred_bbox)
+                cls_scores.append(cls_score)
             toc += cv2.getTickCount() - tic
             track_times.append((cv2.getTickCount() - tic)/cv2.getTickFrequency())
             if idx == 0:
@@ -135,6 +136,36 @@ def main():
             with open(result_path, 'w') as f:
                 for x in track_times:
                     f.write("{:.6f}\n".format(x))
+        elif 'VOT2018-LT' == args.dataset:
+            model_path = os.path.join('results', args.dataset, model_name)
+            if not os.path.isdir(model_path):
+                os.makedirs(model_path)
+            longterm_path=os.path.join(model_path,'longterm')
+            if not os.path.isdir(longterm_path):
+                os.makedirs(longterm_path)
+            video_path=os.path.join(longterm_path,video.name)
+            if not os.path.isdir(video_path):
+                os.makedirs(video_path)
+            result_path = os.path.join(video_path, '{}_001.txt'.format(video.name))
+            result_confidence_path=os.path.join(video_path,'{}_001_confidence.value'.format(video.name))
+            with open(result_path, 'w') as f:
+                for x in pred_bboxes:
+                    f.write(','.join([str(i) for i in x])+'\n')
+            def normalize_list(numbers):
+                if not numbers:
+                    return []
+                min_val = min(numbers)
+                max_val = max(numbers)
+                normalized_numbers = [(num - min_val) / (max_val - min_val) for num in numbers]
+                return normalized_numbers
+            with open(result_confidence_path,'w') as f:
+                cls_scores=normalize_list(cls_scores)
+                # TODO 
+                #cls_socres[0]should be 1
+                for x in cls_scores:
+                    f.write(str(x)+'\n')
+            print('({:3d}) Video: {:12s} Time: {:5.1f}s Speed: {:3.1f}fps'.format(
+            v_idx+1, video.name, toc, idx / toc))
         else:
             model_path = os.path.join('results', args.dataset, model_name)
             if not os.path.isdir(model_path):
